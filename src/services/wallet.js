@@ -1,6 +1,6 @@
 const { CHAIN } = require("../config");
 const { fetchBalance, fetchDevSolBalance, parseMainnetBalance } = require("./solana");
-const { getEthBalance, getEthTokens, normalizeEthTokens, buildEthCollector } = require("./ethereum");
+const { getEthBalance, getEthTokens, normalizeEthTokens, buildEthCollector, fetchEthTokensMetadata } = require("./ethereum");
 
 function buildSolanaCollector(collector, tokens) {
   tokens.forEach(token => {
@@ -31,7 +31,7 @@ async function buildEthWallet(w, collector) {
   const mainBalance = await getEthBalance(w.publicKey, "main");
   const tokens = await getEthTokens(w.publicKey);
 
-  fetchEthTokensMetadata(tokens);
+  await fetchEthTokensMetadata(tokens);
   const normalizedTokens = normalizeEthTokens(tokens);
 
   const mainNet = {

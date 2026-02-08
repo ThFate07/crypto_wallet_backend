@@ -18,7 +18,7 @@ function parseMainnetBalance(raw) {
   const tokens = raw.tokens.map(token => ({
     mint: token.mint,
     amount: token.amount,
-    symbol: token.symbol ?? undefined,
+    symbol: token.symbol ?? "UNKNOWN",
     decimals: token.decimals ?? 0,
   }));
 

@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { SOL_MINT} = require("../config");
 const { buildWallet } = require("../services/wallet");
-const { fetchPrices, loadPrices } = require("../services/prices");
+const { loadPrices, fetchSolanaPrices, fetchEthPrices } = require("../services/prices");
 
 
 router.post("/fetch-wallet-details", async (req, res) => {
@@ -19,10 +19,11 @@ router.post("/fetch-wallet-details", async (req, res) => {
 
     const walletWithData = await Promise.all(wallets.map(w => buildWallet(w, collector)));
 
-    // const tokenPrices = await fetchPrices(collector.Solana);
+    const solTokenPrices = await fetchSolanaPrices(collector.Solana);
+    const ethTokenPrices = await fetchEthPrices(collector.Ethereum)
     // const walletWithPrices = await loadPrices(walletWithData, tokenPrices);
 
-    return res.status(200).json({ message: "successfull" });
+    return res.status(200).json({ message: "successfull" , walletWithData});
   } catch (err) {
     console.log(err)
     return res.status(500).json({ message: "error occured", error: {message: err.message || err.data, status: err.status} });

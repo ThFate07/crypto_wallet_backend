@@ -36,7 +36,8 @@ function normalizeEthTokens(tokens){
   const normalizedTokens = tokens.map(token => { 
     
     // normalize hex 
-    const tokenMetadata = ethTokenMetadataCache.get(token.contractAddress);
+    const contract = token.contractAddress.toLowerCase();
+    const tokenMetadata = ethTokenMetadataCache.get(contract);
 
     const amount = Number(BigInt(token.tokenBalance));
     const symbol = tokenMetadata.symbol;
@@ -58,7 +59,7 @@ async function fetchEthTokensMetadata(tokens) {
   for (let token of tokens) {
 
     const contract = token.contractAddress.toLowerCase();
-    if ( ethTokenMetadataCache.has(contract) ) { 
+    if (ethTokenMetadataCache.has(contract)) { 
       continue
     }
 
@@ -72,13 +73,16 @@ async function fetchEthTokensMetadata(tokens) {
 
     const { data } =  await axios.post(URL, payload);
 
+
+
     if (data.error) throw new Error(data.error.message);
     if (!data?.result) throw new Error("error fetching ethereum token metadata");
 
     ethTokenMetadataCache.set(contract, {
       decimals: data.result.decimals ?? 18,
       symbol: data.result.symbol ?? 'UKNOWN'
-    })  
+    })
+    
 
   };
   

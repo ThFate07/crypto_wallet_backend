@@ -15,6 +15,10 @@ async function fetchBalance(publicKey) {
 }
 
 function parseMainnetBalance(raw) {
+
+  const balance = raw.nativeBalance / solana.LAMPORTS_PER_SOL  
+  const sol = [{mint: "So11111111111111111111111111111111111111112", amount: balance, symbol: "SOL", decimals: 0}]
+
   const tokens = raw.tokens.map(token => ({
     mint: token.mint,
     amount: token.amount,
@@ -22,9 +26,10 @@ function parseMainnetBalance(raw) {
     decimals: token.decimals ?? 0,
   }));
 
+
   return {
-    balance: raw.nativeBalance / solana.LAMPORTS_PER_SOL,
-    tokens,
+    balance,
+    tokens: [...sol, ...tokens]
   };
 }
 

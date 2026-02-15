@@ -1,7 +1,6 @@
 const axios = require("axios");
-const { apiKey, SOL_MINT, alchemy_api } = require("../config");
+const { apiKey, SOL_MINT, alchemy_api, CHAIN, ETH_MINT } = require("../config");
 const { response } = require("express");
-const { error } = require("console");
 
 async function fetchSolanaPrices(mintAddresses) {
   const data = {
@@ -31,58 +30,90 @@ async function fetchSolanaPrices(mintAddresses) {
   return tokenPrices;
 }
 
-function loadPrices(wallets, tokenPrices) {
-  let finalWallets = wallets.map(wallet => {
-    const devNet = wallet.devNet;
-    const mainNet = wallet.mainNet;
+function loadSolanaPrices(wallet, tokenPrices) {
+  const devNet = wallet.devNet;
+  const mainNet = wallet.mainNet;
 
-    const solPrice = tokenPrices[SOL_MINT]?.price_info?.price_per_token ?? 0;
-    devNet.totalBalance = devNet.balance * solPrice;
+  const solPrice = tokenPrices[SOL_MINT]?.price_info?.price_per_token ?? 0;
+  devNet.totalBalance = devNet.balance * solPrice;
 
-    let totalBalance = mainNet.balance * solPrice;
+  let totalBalance = mainNet.balance * solPrice;
 
-    mainNet.tokens.forEach(token => {
-      const priceInfo = tokenPrices[token.mint]?.price_info;
-      if (priceInfo) {
-        const price = priceInfo.price_per_token;
-        totalBalance += (token.amount / 10 ** token.decimals) * price;
+  mainNet.tokens.forEach(token => {
+    const priceInfo = tokenPrices[token.mint]?.price_info;
+    if (priceInfo) {
+      const price = priceInfo.price_per_token;
+      totalBalance += (token.amount / 10 ** token.decimals) * price;
 
-        if (!token.symbol) {
-          token.symbol = tokenPrices[token.mint].symbol;
-        }
+      if (!token.symbol) {
+        token.symbol = tokenPrices[token.mint].symbol;
       }
-    });
+    }
+  });
 
-    mainNet.totalBalance = totalBalance;
+  mainNet.totalBalance = totalBalance;
 
-    return {
-      ...wallet,
-      devNet,
-      mainNet,
-    };
+  return {
+    ...wallet,
+    devNet,
+    mainNet,
+  };
+}
+
+function loadPrices(wallets, solTokenPrices, ethTokenPrices) {
+  let finalWallets = wallets.map(wallet => {
+    if (wallet.chain === CHAIN.solana) {
+      return loadSolanaPrices(wallet, solTokenPrices);
+    }
+
+    return loadEthPrices(wallet, ethTokenPrices);
   });
 
   return finalWallets;
 }
 
+function loadEthPrices(wallet, ethTokenPrices) {
+  let { mainNet, devNet } = wallet;
+
+  devNet.totalBalance = devNet.balance * ethTokenPrices[ETH_MINT].value;
+  let mainNetTotalBalance = mainNet.balance * ethTokenPrices[ETH_MINT].value;
+  
+  for (let token of mainNet.tokens) { 
+    mainNetTotalBalance += ( token.amount / 10 ** token.decimals ) * ethTokenPrices[token.mint].value;
+  }
+
+  mainNet.totalBalance = mainNetTotalBalance;
+
+  return { 
+    ...wallet,
+    mainNet,
+    devNet
+  }
+}
+
+function filterEmptyPriceAddresses(data) {
+  return data.filter(tokens => tokens.prices.length);
+}
+
 async function fetchEthPrices(contractAddresses) {
   const url = `https://api.g.alchemy.com/prices/v1/${alchemy_api}/tokens/by-address`;
   const headers = { "Content-Type": "application/json" };
-  //   const data = { addresses: [{ network: "eth-mainnet", address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" }] };
-  const data = {
-    addresses: 
-      Array.from(contractAddresses).map(address => ({
-        address
-      })),
+  const body = {
+    addresses: Array.from(contractAddresses).map(address => ({
+      address,
+      network: "eth-mainnet",
+    })),
   };
 
-  const response = await axios.post(url, data, {headers});
+  const { data } = await axios.post(url, body, { headers });
 
-  if (response?.error) throw new Error(response.error)
-  if (!response?.data) throw new Error("Error fetching eth token price");
+  if (response?.error) throw new Error(response.error);
+  if (!data) throw new Error("Error fetching eth token price");
 
-  return response.data.data.map(token => ({address: token.address, value: token.prices[0].value}) )
-
+  return filterEmptyPriceAddresses(data.data).reduce((acc, token) => {
+    acc[token.address] = { value: token.prices[0].value };
+    return acc;
+  }, {});
 }
 
 module.exports = { fetchSolanaPrices, loadPrices, fetchEthPrices };

@@ -21,9 +21,10 @@ router.post("/fetch-wallet-details", async (req, res) => {
 
     const solTokenPrices = await fetchSolanaPrices(collector.Solana);
     const ethTokenPrices = await fetchEthPrices(collector.Ethereum)
-    // const walletWithPrices = await loadPrices(walletWithData, tokenPrices);
+    
+    const walletWithPrices = await loadPrices(walletWithData, solTokenPrices, ethTokenPrices);
 
-    return res.status(200).json({ message: "successfull" , walletWithData});
+    return res.status(200).json({ message: "successfull" , walletWithPrices});
   } catch (err) {
     console.log(err)
     return res.status(500).json({ message: "error occured", error: {message: err.message || err.data, status: err.status} });

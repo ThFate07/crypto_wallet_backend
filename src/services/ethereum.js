@@ -27,7 +27,7 @@ async function getEthTokens(publicKey) {
 
 async function getEthBalance(publicKey, network) {
   const balanceWei = await ethProviders[network].getBalance(publicKey);
-  return ethers.formatEther(balanceWei);
+  return Number(ethers.formatEther(balanceWei));
 }
 
 
@@ -40,7 +40,7 @@ function normalizeEthTokens(tokens){
     const tokenMetadata = ethTokenMetadataCache.get(contract);
 
     const amount = Number(BigInt(token.tokenBalance));
-    const symbol = tokenMetadata.symbol;
+    const symbol = tokenMetadata.symbol === "WETH" ? "ETH" : tokenMetadata.symbol;
     const decimals = tokenMetadata.decimals
 
     return { 

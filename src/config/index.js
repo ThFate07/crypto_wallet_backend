@@ -4,6 +4,7 @@ const ether = require('ethers')
 
 const apiKey = process.env.HELIUS_API;
 const alchemy_api = process.env.ALCHEMY_API
+const ANKR_API = process.env.ANKR_API;
 
 const main = new solana.Connection(`https://mainnet.helius-rpc.com/?api-key=${apiKey}`, "confirmed");
 const dev = new solana.Connection("https://api.devnet.solana.com", "confirmed");
@@ -32,5 +33,6 @@ module.exports = {
   SOL_MINT,
   alchemy_api,
   ethProviders,
-  ETH_MINT
+  ETH_MINT,
+  ANKR_API
 };
